@@ -825,25 +825,23 @@ EC2_DESCRIBE_INSTANCE_TYPES = """<?xml version="1.0" encoding="UTF-8"?>
     <instanceTypeSet>
     {% for instance_type in instance_types %}
         <item>
-            <instanceType>{{ instance_type.InstanceType }}</instanceType>
+            <instanceType>{{ instance_type.apiname }}</instanceType>
             <vCpuInfo>
-                <defaultVCpus>{{ instance_type.get('VCpuInfo', {}).get('DefaultVCpus', 0)|int }}</defaultVCpus>
-                <defaultCores>{{ instance_type.get('VCpuInfo', {}).get('DefaultCores', 0)|int }}</defaultCores>
-                <defaultThreadsPerCore>{{ instance_type.get('VCpuInfo').get('DefaultThreadsPerCore', 0)|int }}</defaultThreadsPerCore>
+                <defaultVCpus>{{ instance_type.vcpus|int }}</defaultVCpus>
+                <defaultCores>{{ instance_type.vcpus|int }}</defaultCores>
+                <defaultThreadsPerCore>1</defaultThreadsPerCore>
             </vCpuInfo>
             <memoryInfo>
-                <sizeInMiB>{{ instance_type.get('MemoryInfo', {}).get('SizeInMiB', 0)|int }}</sizeInMiB>
+                <sizeInMiB>{{ instance_type.memory|int }}</sizeInMiB>
             </memoryInfo>
             <instanceStorageInfo>
-                <totalSizeInGB>{{ instance_type.get('InstanceStorageInfo', {}).get('TotalSizeInGB', 0)|int }}</totalSizeInGB>
+                <totalSizeInGB>{{ instance_type.storage|int }}</totalSizeInGB>
             </instanceStorageInfo>
             <processorInfo>
                 <supportedArchitectures>
-                    {% for arch in instance_type.get('ProcessorInfo', {}).get('SupportedArchitectures', []) %}
                     <item>
-                        {{ arch }}
+                        x86_64
                     </item>
-                    {% endfor %}
                 </supportedArchitectures>
             </processorInfo>
         </item>

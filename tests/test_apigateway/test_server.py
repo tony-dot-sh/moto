@@ -14,7 +14,7 @@ def test_list_apis():
     test_client = backend.test_client()
 
     res = test_client.get("/restapis")
-    json.loads(res.data).should.contain("item")
+    res.data.should.equal(b'{"item": []}')
 
 
 def test_usage_plans_apis():

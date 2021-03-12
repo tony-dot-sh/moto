@@ -35,7 +35,6 @@ RESPONSES_VERSION = pkg_resources.get_distribution("responses").version
 
 class BaseMockAWS(object):
     nested_count = 0
-    mocks_active = False
 
     def __init__(self, backends):
         from moto.instance_metadata import instance_metadata_backend
@@ -51,12 +50,13 @@ class BaseMockAWS(object):
         self.backends_for_urls.update(self.backends)
         self.backends_for_urls.update(default_backends)
 
-        self.FAKE_KEYS = {
+        # "Mock" the AWS credentials as they can't be mocked in Botocore currently
+        FAKE_KEYS = {
             "AWS_ACCESS_KEY_ID": "foobar_key",
             "AWS_SECRET_ACCESS_KEY": "foobar_secret",
         }
-        self.ORIG_KEYS = {}
         self.default_session_mock = mock.patch("boto3.DEFAULT_SESSION", None)
+        self.env_variables_mocks = mock.patch.dict(os.environ, FAKE_KEYS)
 
         if self.__class__.nested_count == 0:
             self.reset()
@@ -74,10 +74,8 @@ class BaseMockAWS(object):
         self.stop()
 
     def start(self, reset=True):
-        if not self.__class__.mocks_active:
-            self.default_session_mock.start()
-            self.mock_env_variables()
-            self.__class__.mocks_active = True
+        self.default_session_mock.start()
+        self.env_variables_mocks.start()
 
         self.__class__.nested_count += 1
         if reset:
@@ -87,16 +85,14 @@ class BaseMockAWS(object):
         self.enable_patching()
 
     def stop(self):
+        self.default_session_mock.stop()
+        self.env_variables_mocks.stop()
         self.__class__.nested_count -= 1
 
         if self.__class__.nested_count < 0:
             raise RuntimeError("Called stop() before start().")
 
         if self.__class__.nested_count == 0:
-            if self.__class__.mocks_active:
-                self.default_session_mock.stop()
-                self.unmock_env_variables()
-                self.__class__.mocks_active = False
             self.disable_patching()
 
     def decorate_callable(self, func, reset):
@@ -142,24 +138,6 @@ class BaseMockAWS(object):
                 # Sometimes we can't set this for built-in types
                 continue
         return klass
-
-    def mock_env_variables(self):
-        # "Mock" the AWS credentials as they can't be mocked in Botocore currently
-        # self.env_variables_mocks = mock.patch.dict(os.environ, FAKE_KEYS)
-        # self.env_variables_mocks.start()
-        for k, v in self.FAKE_KEYS.items():
-            self.ORIG_KEYS[k] = os.environ.get(k, None)
-            os.environ[k] = v
-
-    def unmock_env_variables(self):
-        # This doesn't work in Python2 - for some reason, unmocking clears the entire os.environ dict
-        # Obviously bad user experience, and also breaks pytest - as it uses PYTEST_CURRENT_TEST as an env var
-        # self.env_variables_mocks.stop()
-        for k, v in self.ORIG_KEYS.items():
-            if v:
-                os.environ[k] = v
-            else:
-                del os.environ[k]
 
 
 class HttprettyMockAWS(BaseMockAWS):

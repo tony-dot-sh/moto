@@ -247,10 +247,9 @@ class SimpleSystemManagerResponse(BaseResponse):
         allowed_pattern = self._get_param("AllowedPattern")
         keyid = self._get_param("KeyId")
         overwrite = self._get_param("Overwrite", False)
-        tags = self._get_param("Tags", [])
 
         result = self.ssm_backend.put_parameter(
-            name, description, value, type_, allowed_pattern, keyid, overwrite, tags
+            name, description, value, type_, allowed_pattern, keyid, overwrite
         )
 
         if result is None:

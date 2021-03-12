@@ -195,8 +195,7 @@ class CognitoIdpUserPoolDomain(BaseModel):
                 self.custom_domain_config["CertificateArn"].encode("utf-8")
             ).hexdigest()
             return "{hash}.cloudfront.net".format(hash=hash[:16])
-        hash = hashlib.md5(self.user_pool_id.encode("utf-8")).hexdigest()
-        return "{hash}.amazoncognito.com".format(hash=hash[:16])
+        return None
 
     def to_json(self, extended=True):
         distribution = self._distribution_name()

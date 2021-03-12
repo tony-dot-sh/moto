@@ -177,7 +177,6 @@ class TaskDefinition(BaseObject, CloudFormationModel):
 
         self.cpu = cpu
         self.memory = memory
-        self.status = "ACTIVE"
 
     @property
     def response_object(self):
@@ -265,7 +264,6 @@ class Task(BaseObject):
         resource_requirements,
         overrides={},
         started_by="",
-        tags=[],
     ):
         self.cluster_arn = cluster.arn
         self.task_arn = "arn:aws:ecs:{0}:{1}:task/{2}".format(
@@ -278,7 +276,6 @@ class Task(BaseObject):
         self.overrides = overrides
         self.containers = []
         self.started_by = started_by
-        self.tags = tags
         self.stopped_reason = ""
         self.resource_requirements = resource_requirements
 
@@ -789,15 +786,11 @@ class EC2ContainerServiceBackend(BaseBackend):
             family in self.task_definitions
             and revision in self.task_definitions[family]
         ):
-            task_definition = self.task_definitions[family].pop(revision)
-            task_definition.status = "INACTIVE"
-            return task_definition
+            return self.task_definitions[family].pop(revision)
         else:
             raise TaskDefinitionNotFoundException
 
-    def run_task(
-        self, cluster_str, task_definition_str, count, overrides, started_by, tags
-    ):
+    def run_task(self, cluster_str, task_definition_str, count, overrides, started_by):
         cluster = self._get_cluster(cluster_str)
 
         task_definition = self.describe_task_definition(task_definition_str)
@@ -837,7 +830,6 @@ class EC2ContainerServiceBackend(BaseBackend):
                         resource_requirements,
                         overrides or {},
                         started_by or "",
-                        tags or [],
                     )
                     self.update_container_instance_resources(
                         container_instance, resource_requirements
